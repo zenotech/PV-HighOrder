@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="/MyIcons" >
+    <file>HighOrderIcon.png</file>
+  </qresource>
+</RCC>

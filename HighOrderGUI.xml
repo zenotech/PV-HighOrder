@@ -1,0 +1,9 @@
+<!-- Paraview plugin for the visualization of high order fields -->
+<!-- Sebastien Blaise, 2012 -->
+
+<ParaViewFilters>
+  <Category name="Extensions" menu_label="&amp;Extensions">
+    <!-- adds a new category and then adds our filter to it -->
+    <Filter name="HighOrder" icon=":/MyIcons/HighOrderIcon.png" />
+  </Category>
+</ParaViewFilters>

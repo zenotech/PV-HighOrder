@@ -1,0 +1,89 @@
+<!-- Paraview plugin for the visualization of high order fields -->
+<!-- Sebastien Blaise, 2012-2014 -->
+
+<ServerManagerConfiguration>
+  <ProxyGroup name="filters">
+    <SourceProxy name="HighOrder" class="vtkHighOrder" label="HighOrder">
+      <Documentation long_help="High-order visualization"
+		     short_help="High-order visualization">
+	High-order visualization.
+      </Documentation>
+      <InputProperty name="Input" command="SetInputConnection">
+	<ProxyGroupDomain name="groups">
+	  <Group name="sources"/>
+	  <Group name="filters"/>
+	</ProxyGroupDomain>
+	<DataTypeDomain name="input_type">
+	  <DataType value="vtkUnstructuredGrid"/>
+	</DataTypeDomain>
+	<InputArrayDomain
+	    name="input_array"
+	/>
+	<InputArrayDomain
+	    name="input_array_pt"
+	    attribute_type="point"
+	/>
+	<Documentation>
+	  Adaptive high-order representation
+	</Documentation>
+      </InputProperty>  
+      <!-- Maximum recursion level -->
+      <IntVectorProperty
+	  label="Max level"
+	  name="levelMax"
+	  command="SetLevelMax"
+	  number_of_elements="1"
+	  default_values="1" >
+	<IntRangeDomain name="range" min="0" max="10" />
+	<Documentation>
+	  Select the recursive level of subdivisions
+	</Documentation>
+      </IntVectorProperty>
+      <!-- Field used for the error measurement -->
+      <StringVectorProperty
+	  name="errorField"
+	  command="SetErrorField"
+	  label="Field for error"
+	  default_values=""
+	  number_of_elements="5"
+	  element_types="0 0 0 0 2"
+	  >
+	<ArrayListDomain name="array_list"
+			 input_domain_name="input_array_pt">
+	  <RequiredProperties>
+	    <Property name="Input" function="Input"/>
+	  </RequiredProperties>
+	</ArrayListDomain>
+	<Documentation>
+	  Select the field to use to compute the error.
+	</Documentation>
+      </StringVectorProperty>	
+      <!-- Error tolerance -->
+      <DoubleVectorProperty
+	  label="Rel tolerance"
+	  name="relTolerance"
+	  command="SetRelTolerance"
+	  number_of_elements="1"
+	  default_values="0.01" >
+	<DoubleRangeDomain name="range" min="-0.0001" max="0.1" />
+	<Documentation>
+	  Select the relative error tolerance
+	</Documentation>
+      </DoubleVectorProperty>
+      <!--  Recursive levels to compute the error -->
+      <IntVectorProperty
+	  label="Two-levels error indicator (slower)"
+	  name="isTwoLevel"
+	  command="SetTwoLevelErr"
+	  number_of_elements="1"
+	  default_values="1">
+	<BooleanDomain name="bool"/>
+	<Documentation>
+	  Allow to use two recursive levels to compute the error
+	</Documentation>
+      </IntVectorProperty>
+    </SourceProxy>
+  </ProxyGroup>
+</ServerManagerConfiguration>
+
+
