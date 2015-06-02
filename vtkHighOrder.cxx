@@ -20,6 +20,7 @@
 
 #include <sstream>
 #include <set>
+#include <vector>
 
 vtkStandardNewMacro(vtkHighOrder);
 
@@ -62,6 +63,15 @@ void vtkHighOrder::subdivideAll(){
   vtkIdType nbPointArrays = in->GetPointData()->GetNumberOfArrays();
   vtkIdType nbCellArrays = in->GetCellData()->GetNumberOfArrays();
 
+  if(nbPointArrays == 0)
+  {
+	  vtkErrorMacro(<< "No PointData arrays found");
+  }
+  if(nbCellArrays == 0)
+  {
+	  vtkErrorMacro(<< "No CellData arrays found");
+  }
+
   // Create a set of all variables with HO solution pts
   std::set<std::string> HOvariables;
   for(vtkIdType j=0; j < nbCellArrays; ++j)
@@ -74,6 +84,7 @@ void vtkHighOrder::subdivideAll(){
 	  }
   }
 
+  // Check
   int nbAddDof=0;
   for(vtkIdType j = 0; j < nbPointArrays; j++)
     {
@@ -95,30 +106,27 @@ void vtkHighOrder::subdivideAll(){
       }
     }
   
-  vtkFloatArray *arraysDof[nbPointArrays][nbAddDof];
-  vtkFloatArray *arraysCoord[nbAddDof];
+  std::map<std::string,std::vector<vtkFloatArray*> > arraysDof;
+  std::vector<vtkFloatArray*> arraysCoord;
+
+  //vtkFloatArray *arraysDof[nbPointArrays][nbAddDof];
+  //vtkFloatArray *arraysCoord[nbAddDof];
+  nbPointArrays = 0;
+  for(std::set<std::string>::iterator itr=HOvariables.begin();itr!=HOvariables.end();++itr)
+  {
+	  for (int i=0; i<nbAddDof; i++)
+	  {
+	  std::stringstream nameCSol;
+	  nameCSol << *itr << "_HOsol_" << i;
+	  arraysDof[*itr].push_back(
+			  vtkFloatArray::SafeDownCast(in->GetCellData()->GetArray(nameCSol.str().c_str())));
+	  }
+	  nbPointArrays++;
+  }
 
   bool highOrderGeo=true;
-  
   for (int i=0; i<nbAddDof; i++)
     {
-      
-      for(vtkIdType j = 0; j < nbPointArrays; j++)
-	{
-	  std::string namePt=in->GetPointData()->GetArrayName(j);
-
-      if(HOvariables.find(namePt) != HOvariables.end())
-      {
-		  std::stringstream nameCSol;
-		  nameCSol << namePt << "_HOsol_" << i;
-		  arraysDof[j][i]=vtkFloatArray::SafeDownCast(in->GetCellData()->GetArray(nameCSol.str().c_str()));
-		  if (!arraysDof[j][i]){
-			vtkErrorMacro(<< "Field not found: " << nameCSol.str() <<
-				  ". Check your data file.");
-			return;
-		  }
-      }
-	}
       std::stringstream nameCCoord;
       nameCCoord << "HOcoord_" << i;
       arraysCoord[i]=vtkFloatArray::SafeDownCast(in->GetCellData()->GetArray(nameCCoord.str().c_str()));
@@ -129,9 +137,13 @@ void vtkHighOrder::subdivideAll(){
   
   std::string *fieldsNames = new std::string[nbPointArrays];
   int dim[nbPointArrays];
-  for(vtkIdType j = 0; j < nbPointArrays; j++){
-    dim[j]=arraysDof[j][0]->GetNumberOfComponents();
-    fieldsNames[j]=in->GetPointData()->GetArrayName(j);
+  nbPointArrays=0;
+  for(std::set<std::string>::iterator itr=HOvariables.begin();itr!=HOvariables.end();++itr)
+  {
+  //for(vtkIdType j = 0; j < nbPointArrays; j++){
+    dim[nbPointArrays]=arraysDof[*itr][0]->GetNumberOfComponents();
+    fieldsNames[nbPointArrays]=*itr;
+    nbPointArrays++;
   }
   adaptData data(nbPointArrays,dim,fieldsNames);
   data.out=out;
@@ -146,7 +158,7 @@ void vtkHighOrder::subdivideAll(){
   }
   delete [] fieldsNames; 
   //Compute the average value of errorField
-  vtkFloatArray *errArray=vtkFloatArray::SafeDownCast(in->GetPointData()->GetArray(data.iError));
+  vtkFloatArray *errArray=vtkFloatArray::SafeDownCast(in->GetPointData()->GetArray(fieldsNames[data.iError].c_str()));
   float val[dim[data.iError]];
 
   float sqAvg=0;
@@ -159,9 +171,11 @@ void vtkHighOrder::subdivideAll(){
   float val2[dim[data.iError]];
   for (int k=0; k<nbAddDof; k++){
     for (int i=0; i<in->GetNumberOfCells(); i++){
-      arraysDof[data.iError][k]->GetTupleValue(i,val2);
+
+      arraysDof[fieldsNames[data.iError]][k]->GetTupleValue(i,val2);
+
       for (int j=0; j<dim[data.iError]; j++){
-	sqAvg+=val2[j]*val2[j];
+    	  sqAvg+=val2[j]*val2[j];
       }
     }
   }
@@ -181,10 +195,10 @@ void vtkHighOrder::subdivideAll(){
 
       switch (cellType){
       case VTK_TRIANGLE:
-	getTriangleTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
-	if (!highOrderGeo)
-	  getTriangleTree(nbNodesByCell, levelMax);
-	break;
+		getTriangleTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
+		if (!highOrderGeo)
+		  getTriangleTree(nbNodesByCell, levelMax);
+		break;
       case VTK_QUAD:
         getQuadTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
         if (!highOrderGeo)
@@ -196,10 +210,10 @@ void vtkHighOrder::subdivideAll(){
           getTetrahedronTree(nbNodesByCell, levelMax);
         break;
       case VTK_HEXAHEDRON:
-	getHexahedronTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
-	if (!highOrderGeo)
-	  getHexahedronTree(nbNodesByCell, levelMax);
-	break;
+		getHexahedronTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
+		if (!highOrderGeo)
+		  getHexahedronTree(nbNodesByCell, levelMax);
+		break;
       default:
 	vtkErrorMacro(<< "Element type unknown ("<<nbNodesByCell<<") nodes"); 
       }
@@ -231,7 +245,7 @@ void vtkHighOrder::subdivideAll(){
 		for (int i=0; i<3; i++)
 			dofCoord[iNode][i] = v[i];
 		for (int j=0; j<nbPointArrays; j++){
-		  vtkFloatArray *ptarray=vtkFloatArray::SafeDownCast(in->GetPointData()->GetArray(j));
+		  vtkFloatArray *ptarray=vtkFloatArray::SafeDownCast(in->GetPointData()->GetArray(fieldsNames[j].c_str()));
 		  dof[j][iNode]=new float[dim[j]];
 		  ptarray->GetTupleValue(idsIn->GetId(iNode),dof[j][iNode]);
 		}
@@ -240,7 +254,7 @@ void vtkHighOrder::subdivideAll(){
       for (int i=0; i<nbAddDof; i++){
 	for (int j=0; j<nbPointArrays; j++){
 	  dof[j][i+nbNodesByCell]=new float[dim[j]];
-	  arraysDof[j][i]->GetTupleValue (iElem, dof[j][i+nbNodesByCell]);
+	  arraysDof[fieldsNames[j]][i]->GetTupleValue (iElem, dof[j][i+nbNodesByCell]);
 	}
 	if (highOrderGeo)
 	  arraysCoord[i]->GetTupleValue (iElem, dofCoord[i+nbNodesByCell]);
