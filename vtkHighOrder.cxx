@@ -280,11 +280,17 @@ void vtkHighOrder::subdivideAll(){
 	{
 	  //#pragma omp critical(buildTreeTRI)
 	  {
-	    tree=getTriangleTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
+
 	    if (!highOrderGeo)
+	    {
 	      treeLin=getTriangleTree(nbNodesByCell, levelMax);
+	      tree=0;
+	    }
 	    else
+	    {
+	      tree=getTriangleTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
 	      treeLin=NULL;
+	    }
 	  }
 	  if (tree)
 	    adapt_entity triangle(&data,&dataElem,3,4,VTK_TRIANGLE,tree,treeLin,levelMax);
@@ -294,11 +300,17 @@ void vtkHighOrder::subdivideAll(){
 	{
           //#pragma omp critical(buildTreeQUAD)
           {
-            tree=getQuadTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
+
             if (!highOrderGeo)
+            {
               treeLin=getQuadTree(nbNodesByCell, levelMax);
+              tree=0;
+            }
             else
+            {
+              tree=getQuadTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
               treeLin=NULL;
+            }
           }
           if (tree)
             adapt_entity quad(&data,&dataElem,4,4,VTK_QUAD,tree,treeLin,levelMax);
@@ -308,11 +320,17 @@ void vtkHighOrder::subdivideAll(){
         {
           //#pragma omp critical(buildTreeTET)
           {
-            tree=getTetrahedronTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
+
             if (!highOrderGeo)
+            {
               treeLin=getTetrahedronTree(nbNodesByCell, levelMax);
+              tree=0;
+            }
             else
+            {
+            	tree=getTetrahedronTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
               treeLin=NULL;
+            }
           }
           if (tree)
             adapt_entity tetrahedron(&data,&dataElem,4,8,VTK_TETRA,tree,treeLin,levelMax);
@@ -322,11 +340,17 @@ void vtkHighOrder::subdivideAll(){
 	{
 	  //#pragma omp critical(buildTreeHEX)
 	  {
-	    tree=getHexahedronTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
+
 	    if (!highOrderGeo)
+	    {
 	      treeLin=getHexahedronTree(nbNodesByCell, levelMax);
+	      tree=0;
+	    }
 	    else
+	    {
+	      tree=getHexahedronTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
 	      treeLin=NULL;
+	    }
 	  }
 	  if (tree)
 	    adapt_entity hexahedron(&data,&dataElem,8,8,VTK_HEXAHEDRON,tree,treeLin,levelMax);
