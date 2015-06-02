@@ -1,6 +1,6 @@
 # PV-HighOrder
 
-Author: Sébastien Blaise
+Original Author: Sébastien Blaise
 http://perso.uclouvain.be/sebastien.blaise/index.html
 
 Paraview plugin to visualise high order data
