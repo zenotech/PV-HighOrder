@@ -405,8 +405,8 @@ vtkHighOrder::adapt_entity::adapt_entity(adaptData *data_,adaptDataElem *dataEle
     if (leftlevels > 0 && !tree->getChild(0)){
       data->plugin->printErrorMessage("Maximum level of available refinements reached");
     }
-    float **valShape=tree->getValShape();
-    float **valShapeLin=NULL;
+    double **valShape=tree->getValShape();
+    double **valShapeLin=NULL;
     if (treeLin)
       valShapeLin=treeLin->getValShape();
     //#pragma omp critical(writeEntity)
@@ -426,7 +426,7 @@ vtkHighOrder::adapt_entity::adapt_entity(adaptData *data_,adaptDataElem *dataEle
 vtkHighOrder::adapt_entity::~adapt_entity(){
 }
 
-void vtkHighOrder::adapt_entity::writeEntity(float **valShape,float **valShapeLin){
+void vtkHighOrder::adapt_entity::writeEntity(double **valShape,double **valShapeLin){
   float points[npoints][3];
   //Coordinates
   vtkIdList *ids = vtkIdList::New();

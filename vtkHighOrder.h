@@ -57,7 +57,7 @@ class vtkHighOrder : public vtkUnstructuredGridAlgorithm
   class adapt_entity
   {
   protected:
-    void writeEntity(float **valShape,float **valShapeLin);
+    void writeEntity(double **valShape,double **valShapeLin);
     //    virtual void recursion_split(int leftlevels=0)=0;
     int elem_type;
     int npoints,nsubEntities;
