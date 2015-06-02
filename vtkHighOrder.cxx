@@ -80,7 +80,10 @@ void vtkHighOrder::subdivideAll(){
 	  std::size_t pos;
 	  if((pos = name.find("_HOsol_")) !=std::string::npos)
 	  {
-		  HOvariables.insert(name.substr(0,pos));
+		  name = name.substr(0,pos);
+		  // Check if point data array exists
+		  if(vtkFloatArray::SafeDownCast(in->GetPointData()->GetArray(name.c_str())))
+			  HOvariables.insert(name);
 	  }
   }
 
@@ -129,13 +132,13 @@ void vtkHighOrder::subdivideAll(){
     {
       std::stringstream nameCCoord;
       nameCCoord << "HOcoord_" << i;
-      arraysCoord[i]=vtkFloatArray::SafeDownCast(in->GetCellData()->GetArray(nameCCoord.str().c_str()));
+      arraysCoord.push_back(vtkFloatArray::SafeDownCast(in->GetCellData()->GetArray(nameCCoord.str().c_str())));
       if (!arraysCoord[i]) {
     	  highOrderGeo=false;
       }	  
     }
   
-  std::string *fieldsNames = new std::string[nbPointArrays];
+  std::vector<std::string> fieldsNames(nbPointArrays);
   int dim[nbPointArrays];
   nbPointArrays=0;
   for(std::set<std::string>::iterator itr=HOvariables.begin();itr!=HOvariables.end();++itr)
