@@ -8,6 +8,7 @@
 #include "vtkPolyDataAlgorithm.h"
 #include "vtkEdgeTable.h"
 #include "vtkDoubleArray.h"
+#include "vtkFloatArray.h"
 #include "vtkMath.h"
 #include <vtkInformation.h>
 #include <vtkInformationVector.h>

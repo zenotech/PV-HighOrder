@@ -59,7 +59,7 @@
 	</Documentation>
       </StringVectorProperty>	
       <!-- Error tolerance -->
-      <DoubleVectorProperty
+      <FloatVectorProperty
 	  label="Rel tolerance"
 	  name="relTolerance"
 	  command="SetRelTolerance"
@@ -69,7 +69,7 @@
 	<Documentation>
 	  Select the relative error tolerance
 	</Documentation>
-      </DoubleVectorProperty>
+      </FloatVectorProperty>
       <!--  Recursive levels to compute the error -->
       <IntVectorProperty
 	  label="Two-levels error indicator (slower)"
