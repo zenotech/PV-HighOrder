@@ -19,6 +19,7 @@
 
 
 #include <sstream>
+#include <set>
 
 vtkStandardNewMacro(vtkHighOrder);
 
@@ -61,25 +62,37 @@ void vtkHighOrder::subdivideAll(){
   vtkIdType nbPointArrays = in->GetPointData()->GetNumberOfArrays();
   vtkIdType nbCellArrays = in->GetCellData()->GetNumberOfArrays();
 
+  // Create a set of all variables with HO solution pts
+  std::set<std::string> HOvariables;
+  for(vtkIdType j=0; j < nbCellArrays; ++j)
+  {
+	  std::string name = in->GetCellData()->GetArrayName(j);
+	  std::size_t pos;
+	  if((pos = name.find("_HOsol_")) !=std::string::npos)
+	  {
+		  HOvariables.insert(name.substr(0,pos));
+	  }
+  }
+
   int nbAddDof=0;
   for(vtkIdType j = 0; j < nbPointArrays; j++)
     {
       std::string namePt=in->GetPointData()->GetArrayName(j);
       int iAddDof=-1;
       while (true){
-	iAddDof++;
-	std::stringstream nameCSol;
-	nameCSol << namePt << "_HOsol_" << iAddDof;
-	if(!vtkDoubleArray::SafeDownCast(in->GetCellData()->GetArray(nameCSol.str().c_str())))
-	  break;
+		iAddDof++;
+		std::stringstream nameCSol;
+		nameCSol << namePt << "_HOsol_" << iAddDof;
+		if(!vtkFloatArray::SafeDownCast(in->GetCellData()->GetArray(nameCSol.str().c_str())))
+		  break;
       }
       if (nbAddDof!=0 && iAddDof!=nbAddDof)
-	vtkErrorMacro(<< "All PointData fields should have the same polynomial order");
+    	  vtkErrorMacro(<< "All PointData fields should have the same polynomial order");
       nbAddDof=iAddDof;
     }
   
-  vtkDoubleArray *arraysDof[nbPointArrays][nbAddDof];
-  vtkDoubleArray *arraysCoord[nbAddDof];
+  vtkFloatArray *arraysDof[nbPointArrays][nbAddDof];
+  vtkFloatArray *arraysCoord[nbAddDof];
 
   bool highOrderGeo=true;
   
@@ -91,7 +104,7 @@ void vtkHighOrder::subdivideAll(){
 	  std::string namePt=in->GetPointData()->GetArrayName(j);
 	  std::stringstream nameCSol;
 	  nameCSol << namePt << "_HOsol_" << i;
-	  arraysDof[j][i]=vtkDoubleArray::SafeDownCast(in->GetCellData()->GetArray(nameCSol.str().c_str()));
+	  arraysDof[j][i]=vtkFloatArray::SafeDownCast(in->GetCellData()->GetArray(nameCSol.str().c_str()));
 	  if (!arraysDof[j][i]){
 	    vtkErrorMacro(<< "Field not found: " << nameCSol.str() << 
 			  ". Check your data file.");
@@ -100,13 +113,13 @@ void vtkHighOrder::subdivideAll(){
 	}
       std::stringstream nameCCoord;
       nameCCoord << "HOcoord_" << i;
-      arraysCoord[i]=vtkDoubleArray::SafeDownCast(in->GetCellData()->GetArray(nameCCoord.str().c_str()));
+      arraysCoord[i]=vtkFloatArray::SafeDownCast(in->GetCellData()->GetArray(nameCCoord.str().c_str()));
       if (!arraysCoord[i]) {
-	highOrderGeo=false;
+    	  highOrderGeo=false;
       }	  
     }
   
-  std::string fieldsNames[nbPointArrays];
+  std::string *fieldsNames = new std::string[nbPointArrays];
   int dim[nbPointArrays];
   for(vtkIdType j = 0; j < nbPointArrays; j++){
     dim[j]=arraysDof[j][0]->GetNumberOfComponents();
@@ -123,22 +136,24 @@ void vtkHighOrder::subdivideAll(){
     if (fieldsNames[j]==errorField)
       data.iError=j;
   }
-  
+  delete [] fieldsNames; 
   //Compute the average value of errorField
-  vtkDoubleArray *errArray=vtkDoubleArray::SafeDownCast(in->GetPointData()->GetArray(data.iError));
-  double val[dim[data.iError]];
-  double sqAvg=0;
+  vtkFloatArray *errArray=vtkFloatArray::SafeDownCast(in->GetPointData()->GetArray(data.iError));
+  float val[dim[data.iError]];
+
+  float sqAvg=0;
   for (int i=0; i<in->GetNumberOfPoints(); i++){
     errArray->GetTupleValue(i,val);
     for (int j=0; j<dim[data.iError]; j++){
       sqAvg+=val[j]*val[j];
     }
   }
+  float val2[dim[data.iError]];
   for (int k=0; k<nbAddDof; k++){
     for (int i=0; i<in->GetNumberOfCells(); i++){
-      arraysDof[data.iError][k]->GetTupleValue(i,val);
+      arraysDof[data.iError][k]->GetTupleValue(i,val2);
       for (int j=0; j<dim[data.iError]; j++){
-	sqAvg+=val[j]*val[j];
+	sqAvg+=val2[j]*val2[j];
       }
     }
   }
@@ -193,27 +208,27 @@ void vtkHighOrder::subdivideAll(){
       int nbNodesByCell=idsIn->GetNumberOfIds();
       int cellType=in->GetCellType(iElem);
       
-      double **dof[nbPointArrays];
+      float **dof[nbPointArrays];
       int sizeDofCoord=highOrderGeo?(nbNodesByCell+nbAddDof):nbNodesByCell;
-      double *dofCoord[sizeDofCoord];
+      float *dofCoord[sizeDofCoord];
       for (int i=0; i<sizeDofCoord; i++)
-	dofCoord[i]=new double[3];
+    	  dofCoord[i]=new float[3];
       for (int i=0; i<nbPointArrays; i++)
-	dof[i]=new double*[nbNodesByCell+nbAddDof];
+    	  dof[i]=new float*[nbNodesByCell+nbAddDof];
       
       //P1 data
       for (int iNode=0; iNode<nbNodesByCell; iNode++){
-	in->GetPoint(idsIn->GetId(iNode),dofCoord[iNode]);
-	for (int j=0; j<nbPointArrays; j++){
-	  vtkDoubleArray *ptarray=vtkDoubleArray::SafeDownCast(in->GetPointData()->GetArray(j));
-	  dof[j][iNode]=new double[dim[j]];
-	  ptarray->GetTupleValue(idsIn->GetId(iNode),dof[j][iNode]);
-	}
+		in->GetPoint(idsIn->GetId(iNode),dofCoord[iNode]);
+		for (int j=0; j<nbPointArrays; j++){
+		  vtkFloatArray *ptarray=vtkFloatArray::SafeDownCast(in->GetPointData()->GetArray(j));
+		  dof[j][iNode]=new float[dim[j]];
+		  ptarray->GetTupleValue(idsIn->GetId(iNode),dof[j][iNode]);
+		}
       }
       //High Order extension
       for (int i=0; i<nbAddDof; i++){
 	for (int j=0; j<nbPointArrays; j++){
-	  dof[j][i+nbNodesByCell]=new double[dim[j]];
+	  dof[j][i+nbNodesByCell]=new float[dim[j]];
 	  arraysDof[j][i]->GetTupleValue (iElem, dof[j][i+nbNodesByCell]);
 	}
 	if (highOrderGeo)
@@ -312,7 +327,7 @@ void vtkHighOrder::SetErrorField(int a, int b, int c, int d, const char* errorFi
   this->Modified();
 }
 
-void vtkHighOrder::SetRelTolerance(double relTolerance_){
+void vtkHighOrder::SetRelTolerance(float relTolerance_){
   relTolerance=relTolerance_;
   this->Modified();
 }
@@ -325,9 +340,9 @@ void vtkHighOrder::SetTwoLevelErr(int isTwoLevel_){
 vtkHighOrder::adaptData::adaptData(int nbPointArrays, int* dim_, std::string *fieldsNames){
   nbFields=nbPointArrays;
   dim=dim_;
-  arrays = new vtkDoubleArray*[nbFields];
+  arrays = new vtkFloatArray*[nbFields];
   for (int i=0; i<nbFields; i++){
-    arrays[i] = vtkDoubleArray::New();
+    arrays[i] = vtkFloatArray::New();
     arrays[i]->SetNumberOfComponents(dim[i]);
     arrays[i]->SetName(fieldsNames[i].c_str());
   }
@@ -351,11 +366,11 @@ vtkHighOrder::adapt_entity::adapt_entity(adaptData *data_,adaptDataElem *dataEle
   if (data->tolerance<0)
     needRefine=true;
   else if (tree->getChild(0)){
-    double avgErr[data->dim[data->iError]];
-    double avg[data->dim[data->iError]];
+    float avgErr[data->dim[data->iError]];
+    float avg[data->dim[data->iError]];
     //Two-levels check
     if (tree->getChild(0)->getChild(0) && data->isTwoLevel==1){
-      double sqerror=0;
+      float sqerror=0;
       for (int i=0; i<nsubEntities; i++){
 	getAvg(tree->getChild(i),avgErr); //Average on a child
 	for (int j=0; j<nsubEntities; j++){
@@ -371,7 +386,7 @@ vtkHighOrder::adapt_entity::adapt_entity(adaptData *data_,adaptDataElem *dataEle
       }
     }
     //One-level check
-    double sqerror=0;
+    float sqerror=0;
     getAvg(tree,avgErr); //Average on current element
     for (int i=0; i<nsubEntities; i++){
       getAvg(tree->getChild(i),avg); //Average on a child
@@ -390,8 +405,8 @@ vtkHighOrder::adapt_entity::adapt_entity(adaptData *data_,adaptDataElem *dataEle
     if (leftlevels > 0 && !tree->getChild(0)){
       data->plugin->printErrorMessage("Maximum level of available refinements reached");
     }
-    double **valShape=tree->getValShape();
-    double **valShapeLin=NULL;
+    float **valShape=tree->getValShape();
+    float **valShapeLin=NULL;
     if (treeLin)
       valShapeLin=treeLin->getValShape();
     //#pragma omp critical(writeEntity)
@@ -411,8 +426,8 @@ vtkHighOrder::adapt_entity::adapt_entity(adaptData *data_,adaptDataElem *dataEle
 vtkHighOrder::adapt_entity::~adapt_entity(){
 }
 
-void vtkHighOrder::adapt_entity::writeEntity(double **valShape,double **valShapeLin){
-  double points[npoints][3];
+void vtkHighOrder::adapt_entity::writeEntity(float **valShape,float **valShapeLin){
+  float points[npoints][3];
   //Coordinates
   vtkIdList *ids = vtkIdList::New();
 
@@ -433,7 +448,7 @@ void vtkHighOrder::adapt_entity::writeEntity(double **valShape,double **valShape
   int maxdim=0;
   for (int iF=0; iF<data->nbFields; iF++)
     maxdim=std::max(maxdim,data->dim[iF]);
-  double val[npoints][data->nbFields][maxdim];
+  float val[npoints][data->nbFields][maxdim];
   //Data
   for (int k=0; k<npoints; k++){
     for (int iF=0; iF<data->nbFields; iF++){
@@ -459,8 +474,8 @@ void vtkHighOrder::adapt_entity::writeEntity(double **valShape,double **valShape
 }
 
 
-void vtkHighOrder::adapt_entity::getAvg(recurShape *tree, double *avg){
-  double **valShape=tree->getValShape();
+void vtkHighOrder::adapt_entity::getAvg(recurShape *tree, float *avg){
+  float **valShape=tree->getValShape();
   for (int j=0; j<data->dim[data->iError]; j++){
     avg[j]=0;
     for (int k=0; k<npoints; k++){
