@@ -32,9 +32,9 @@ class vtkHighOrder : public vtkUnstructuredGridAlgorithm
   public:
     int isTwoLevel;
     int iError;
-    double sqAvg;
-    double tolerance;
-    vtkDoubleArray **arrays;
+    float sqAvg;
+    float tolerance;
+    vtkFloatArray **arrays;
     int *dim; 
     int nbFields;
     vtkUnstructuredGrid *out;
@@ -47,8 +47,8 @@ class vtkHighOrder : public vtkUnstructuredGridAlgorithm
   class adaptDataElem
   {
   public:
-    double ***dof;
-    double **dofCoord; 
+    float ***dof;
+    float **dofCoord;
     int nbShapeFct;
   };
   
@@ -56,14 +56,14 @@ class vtkHighOrder : public vtkUnstructuredGridAlgorithm
   class adapt_entity
   {
   protected:
-    void writeEntity(double **valShape,double **valShapeLin);
+    void writeEntity(float **valShape,float **valShapeLin);
     //    virtual void recursion_split(int leftlevels=0)=0;
     int elem_type;
     int npoints,nsubEntities;
-    double **points;
+    float **points;
     adaptData *data;
     adaptDataElem *dataElem;
-    void getAvg(recurShape *tree, double *avg);
+    void getAvg(recurShape *tree, float *avg);
   public:
     adapt_entity(adaptData *data_,adaptDataElem *dataElem_,int npoints_,int nsubEntities_,int elem_type_,
 		 recurShape *tree, recurShape *treeLin, int leftlevels);
@@ -77,8 +77,8 @@ class vtkHighOrder : public vtkUnstructuredGridAlgorithm
   
   int levelMax;
   std::string errorField;
-  double relTolerance;
-  double isTwoLevel;
+  float relTolerance;
+  float isTwoLevel;
 
   int nbElems;
   vtkPoints* newPts;
@@ -106,7 +106,7 @@ class vtkHighOrder : public vtkUnstructuredGridAlgorithm
   //Interface
   void SetLevelMax(int levelMax);
   void SetErrorField(int a, int b, int c, int d, const char* errorField);
-  void SetRelTolerance(double relTolerance_);
+  void SetRelTolerance(float relTolerance_);
   void SetTwoLevelErr(int isTwoLevel);
 
   static vtkHighOrder *New();
