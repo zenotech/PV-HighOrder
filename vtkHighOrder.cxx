@@ -78,17 +78,21 @@ void vtkHighOrder::subdivideAll(){
   for(vtkIdType j = 0; j < nbPointArrays; j++)
     {
       std::string namePt=in->GetPointData()->GetArrayName(j);
-      int iAddDof=-1;
-      while (true){
-		iAddDof++;
-		std::stringstream nameCSol;
-		nameCSol << namePt << "_HOsol_" << iAddDof;
-		if(!vtkFloatArray::SafeDownCast(in->GetCellData()->GetArray(nameCSol.str().c_str())))
-		  break;
+
+      if(HOvariables.find(namePt) != HOvariables.end())
+      {
+		  int iAddDof=-1;
+		  while (true){
+			iAddDof++;
+			std::stringstream nameCSol;
+			nameCSol << namePt << "_HOsol_" << iAddDof;
+			if(!vtkFloatArray::SafeDownCast(in->GetCellData()->GetArray(nameCSol.str().c_str())))
+			  break;
+		  }
+		  if (nbAddDof!=0 && iAddDof!=nbAddDof)
+			  vtkErrorMacro(<< "All PointData fields should have the same polynomial order");
+		  nbAddDof=iAddDof;
       }
-      if (nbAddDof!=0 && iAddDof!=nbAddDof)
-    	  vtkErrorMacro(<< "All PointData fields should have the same polynomial order");
-      nbAddDof=iAddDof;
     }
   
   vtkFloatArray *arraysDof[nbPointArrays][nbAddDof];
@@ -102,14 +106,18 @@ void vtkHighOrder::subdivideAll(){
       for(vtkIdType j = 0; j < nbPointArrays; j++)
 	{
 	  std::string namePt=in->GetPointData()->GetArrayName(j);
-	  std::stringstream nameCSol;
-	  nameCSol << namePt << "_HOsol_" << i;
-	  arraysDof[j][i]=vtkFloatArray::SafeDownCast(in->GetCellData()->GetArray(nameCSol.str().c_str()));
-	  if (!arraysDof[j][i]){
-	    vtkErrorMacro(<< "Field not found: " << nameCSol.str() << 
-			  ". Check your data file.");
-	    return;
-	  }
+
+      if(HOvariables.find(namePt) != HOvariables.end())
+      {
+		  std::stringstream nameCSol;
+		  nameCSol << namePt << "_HOsol_" << i;
+		  arraysDof[j][i]=vtkFloatArray::SafeDownCast(in->GetCellData()->GetArray(nameCSol.str().c_str()));
+		  if (!arraysDof[j][i]){
+			vtkErrorMacro(<< "Field not found: " << nameCSol.str() <<
+				  ". Check your data file.");
+			return;
+		  }
+      }
 	}
       std::stringstream nameCCoord;
       nameCCoord << "HOcoord_" << i;
@@ -475,7 +483,7 @@ void vtkHighOrder::adapt_entity::writeEntity(double **valShape,double **valShape
 
 
 void vtkHighOrder::adapt_entity::getAvg(recurShape *tree, float *avg){
-  float **valShape=tree->getValShape();
+  double **valShape=tree->getValShape();
   for (int j=0; j<data->dim[data->iError]; j++){
     avg[j]=0;
     for (int k=0; k<npoints; k++){
