@@ -159,7 +159,7 @@ void vtkHighOrder::subdivideAll(){
     if (fieldsNames[j]==errorField)
       data.iError=j;
   }
-  delete [] fieldsNames; 
+
   //Compute the average value of errorField
   vtkFloatArray *errArray=vtkFloatArray::SafeDownCast(in->GetPointData()->GetArray(fieldsNames[data.iError].c_str()));
   float val[dim[data.iError]];
@@ -365,7 +365,7 @@ void vtkHighOrder::SetTwoLevelErr(int isTwoLevel_){
   this->Modified();
 }
 
-vtkHighOrder::adaptData::adaptData(int nbPointArrays, int* dim_, std::string *fieldsNames){
+vtkHighOrder::adaptData::adaptData(int nbPointArrays, int* dim_, std::vector<std::string> &fieldsNames){
   nbFields=nbPointArrays;
   dim=dim_;
   arrays = new vtkFloatArray*[nbFields];
