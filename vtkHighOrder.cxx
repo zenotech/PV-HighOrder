@@ -226,7 +226,10 @@ void vtkHighOrder::subdivideAll(){
       
       //P1 data
       for (int iNode=0; iNode<nbNodesByCell; iNode++){
-		in->GetPoint(idsIn->GetId(iNode),dofCoord[iNode]);
+    	double v[3];
+		in->GetPoint(idsIn->GetId(iNode),v);
+		for (int i=0; i<3; i++)
+			dofCoord[iNode][i] = v[i];
 		for (int j=0; j<nbPointArrays; j++){
 		  vtkFloatArray *ptarray=vtkFloatArray::SafeDownCast(in->GetPointData()->GetArray(j));
 		  dof[j][iNode]=new float[dim[j]];
