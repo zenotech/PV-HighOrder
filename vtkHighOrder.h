@@ -41,7 +41,7 @@ class vtkHighOrder : public vtkUnstructuredGridAlgorithm
     vtkUnstructuredGrid *out;
     vtkPoints* newPts;
     vtkHighOrder* plugin;
-    adaptData(int nbPointArrays, int* dim_, std::string *fieldsNames);
+    adaptData(int nbPointArrays, int* dim_, std::vector<std::string> &fieldsNames);
     ~adaptData();
   };
 
