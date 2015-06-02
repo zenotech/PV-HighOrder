@@ -121,10 +121,10 @@ void vtkHighOrder::subdivideAll(){
   {
 	  for (int i=0; i<nbAddDof; i++)
 	  {
-	  std::stringstream nameCSol;
-	  nameCSol << *itr << "_HOsol_" << i;
-	  arraysDof[*itr].push_back(
-			  vtkFloatArray::SafeDownCast(in->GetCellData()->GetArray(nameCSol.str().c_str())));
+		  std::stringstream nameCSol;
+		  nameCSol << *itr << "_HOsol_" << i;
+		  arraysDof[*itr].push_back(
+				  vtkFloatArray::SafeDownCast(in->GetCellData()->GetArray(nameCSol.str().c_str())));
 	  }
 	  nbPointArrays++;
   }
@@ -200,31 +200,27 @@ void vtkHighOrder::subdivideAll(){
 
       switch (cellType){
       case VTK_TRIANGLE:
+		getTriangleTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
   		if (!highOrderGeo)
   		  getTriangleTree(nbNodesByCell, levelMax);
-  		else
-  			getTriangleTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
 		break;
       case VTK_QUAD:
+          getQuadTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
         if (!highOrderGeo)
           getQuadTree(nbNodesByCell, levelMax);
-        else
-            getQuadTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
         break;
       case VTK_TETRA:
+          getTetrahedronTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
         if (!highOrderGeo)
           getTetrahedronTree(nbNodesByCell, levelMax);
-        else
-            getTetrahedronTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
         break;
       case VTK_HEXAHEDRON:
+		getHexahedronTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
 		if (!highOrderGeo)
 		  getHexahedronTree(nbNodesByCell, levelMax);
-		else
-			getHexahedronTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
 		break;
       default:
-	vtkErrorMacro(<< "Element type unknown ("<<nbNodesByCell<<") nodes"); 
+    	  vtkErrorMacro(<< "Element type unknown ("<<nbNodesByCell<<") nodes");
       }
     }
 
@@ -261,12 +257,12 @@ void vtkHighOrder::subdivideAll(){
       }
       //High Order extension
       for (int i=0; i<nbAddDof; i++){
-	for (int j=0; j<nbPointArrays; j++){
-	  dof[j][i+nbNodesByCell]=new float[dim[j]];
-	  arraysDof[fieldsNames[j]][i]->GetTupleValue (iElem, dof[j][i+nbNodesByCell]);
-	}
-	if (highOrderGeo)
-	  arraysCoord[i]->GetTupleValue (iElem, dofCoord[i+nbNodesByCell]);
+		for (int j=0; j<nbPointArrays; j++){
+		  dof[j][i+nbNodesByCell]=new float[dim[j]];
+		  arraysDof[fieldsNames[j]][i]->GetTupleValue (iElem, dof[j][i+nbNodesByCell]);
+		}
+		if (highOrderGeo)
+		  arraysCoord[i]->GetTupleValue (iElem, dofCoord[i+nbNodesByCell]);
       }
 
       adaptDataElem dataElem;
@@ -277,38 +273,35 @@ void vtkHighOrder::subdivideAll(){
       recurShape *tree,*treeLin;
       switch (cellType){
       case VTK_TRIANGLE:
-	{
-	  //#pragma omp critical(buildTreeTRI)
-	  {
+		{
+		  //#pragma omp critical(buildTreeTRI)
+		  {
 
-	    if (!highOrderGeo)
-	    {
-	      treeLin=getTriangleTree(nbNodesByCell, levelMax);
-	      tree=0;
-	    }
-	    else
-	    {
-	      tree=getTriangleTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
-	      treeLin=NULL;
-	    }
-	  }
-	  if (tree)
-	    adapt_entity triangle(&data,&dataElem,3,4,VTK_TRIANGLE,tree,treeLin,levelMax);
-	  break;
-	}
+			tree=getTriangleTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
+			if (!highOrderGeo)
+			{
+			  treeLin=getTriangleTree(nbNodesByCell, levelMax);
+			}
+			else
+			{
+			  treeLin=NULL;
+			}
+		  }
+		  if (tree)
+			adapt_entity triangle(&data,&dataElem,3,4,VTK_TRIANGLE,tree,treeLin,levelMax);
+		  break;
+		}
       case VTK_QUAD:
-	{
+        {
           //#pragma omp critical(buildTreeQUAD)
           {
-
+        	tree=getQuadTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
             if (!highOrderGeo)
             {
               treeLin=getQuadTree(nbNodesByCell, levelMax);
-              tree=0;
             }
             else
             {
-              tree=getQuadTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
               treeLin=NULL;
             }
           }
@@ -321,14 +314,13 @@ void vtkHighOrder::subdivideAll(){
           //#pragma omp critical(buildTreeTET)
           {
 
+          	tree=getTetrahedronTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
             if (!highOrderGeo)
             {
               treeLin=getTetrahedronTree(nbNodesByCell, levelMax);
-              tree=0;
             }
             else
             {
-            	tree=getTetrahedronTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
               treeLin=NULL;
             }
           }
@@ -337,38 +329,37 @@ void vtkHighOrder::subdivideAll(){
           break;
         }
       case VTK_HEXAHEDRON:
-	{
-	  //#pragma omp critical(buildTreeHEX)
-	  {
+		{
+		  //#pragma omp critical(buildTreeHEX)
+		  {
 
-	    if (!highOrderGeo)
-	    {
-	      treeLin=getHexahedronTree(nbNodesByCell, levelMax);
-	      tree=0;
-	    }
-	    else
-	    {
-	      tree=getHexahedronTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
-	      treeLin=NULL;
-	    }
-	  }
-	  if (tree)
-	    adapt_entity hexahedron(&data,&dataElem,8,8,VTK_HEXAHEDRON,tree,treeLin,levelMax);
-	  break;
-	}
+			tree=getHexahedronTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
+			if (!highOrderGeo)
+			{
+			  treeLin=getHexahedronTree(nbNodesByCell, levelMax);
+			}
+			else
+			{
+			  treeLin=NULL;
+			}
+		  }
+		  if (tree)
+			adapt_entity hexahedron(&data,&dataElem,8,8,VTK_HEXAHEDRON,tree,treeLin,levelMax);
+		  break;
+		}
       default:
-	vtkErrorMacro(<< "Element type unknown ("<<cellType<<") nodes"); 
+    	  vtkErrorMacro(<< "Element type unknown ("<<cellType<<") nodes");
       }
       
       
       //Clearing memory
       for (int i=0; i<sizeDofCoord; i++)
-	delete[] dofCoord[i];
+    	  delete[] dofCoord[i];
       for (int j=0; j<nbPointArrays; j++){
-	for (int i=0; i<nbNodesByCell+nbAddDof; i++){
-	  delete[] dof[j][i];
-	}
-	delete[] dof[j];
+		for (int i=0; i<nbNodesByCell+nbAddDof; i++){
+		  delete[] dof[j][i];
+		}
+		delete[] dof[j];
       }
       idsIn->Delete();
     }
@@ -430,17 +421,17 @@ vtkHighOrder::adapt_entity::adapt_entity(adaptData *data_,adaptDataElem *dataEle
     if (tree->getChild(0)->getChild(0) && data->isTwoLevel==1){
       float sqerror=0;
       for (int i=0; i<nsubEntities; i++){
-	getAvg(tree->getChild(i),avgErr); //Average on a child
-	for (int j=0; j<nsubEntities; j++){
-	  getAvg(tree->getChild(i)->getChild(j),avg); //Average on a sub-child
-	  for (int k=0; k<data->dim[data->iError]; k++){
-	    avgErr[k]-=avg[k]/nsubEntities;
-	  }
-	}
-	for (int j=0; j<data->dim[data->iError]; j++)
-	  sqerror+=avgErr[j]*avgErr[j];
-	if (sqerror>data->tolerance*data->tolerance*data->sqAvg)
-	  needRefine=true;
+		getAvg(tree->getChild(i),avgErr); //Average on a child
+		for (int j=0; j<nsubEntities; j++){
+		  getAvg(tree->getChild(i)->getChild(j),avg); //Average on a sub-child
+		  for (int k=0; k<data->dim[data->iError]; k++){
+			avgErr[k]-=avg[k]/nsubEntities;
+		  }
+		}
+		for (int j=0; j<data->dim[data->iError]; j++)
+		  sqerror+=avgErr[j]*avgErr[j];
+		if (sqerror>data->tolerance*data->tolerance*data->sqAvg)
+		  needRefine=true;
       }
     }
     //One-level check
@@ -493,13 +484,13 @@ void vtkHighOrder::adapt_entity::writeEntity(double **valShape,double **valShape
     for (int j=0; j<3; j++){
       points[k][j]=0;
       if (!valShapeLin){
-	for (int i=0; i<dataElem->nbShapeFct; i++){
-	  points[k][j]=points[k][j]+valShape[k][i]*dataElem->dofCoord[i][j];
-	}
-      }else{
-	for (int i=0; i<npoints; i++){
-	  points[k][j]=points[k][j]+valShapeLin[k][i]*dataElem->dofCoord[i][j];
-	}
+		for (int i=0; i<dataElem->nbShapeFct; i++){
+		  points[k][j]=points[k][j]+valShape[k][i]*dataElem->dofCoord[i][j];
+		}
+	  }else{
+		for (int i=0; i<npoints; i++){
+		  points[k][j]=points[k][j]+valShapeLin[k][i]*dataElem->dofCoord[i][j];
+		}
       }
     }
   }
@@ -511,10 +502,10 @@ void vtkHighOrder::adapt_entity::writeEntity(double **valShape,double **valShape
   for (int k=0; k<npoints; k++){
     for (int iF=0; iF<data->nbFields; iF++){
       for (int j=0; j<data->dim[iF]; j++){
-	val[k][iF][j]=0;
-	for (int i=0; i<dataElem->nbShapeFct; i++){
-	  val[k][iF][j]+=valShape[k][i]*dataElem->dof[iF][i][j];
-	}
+		val[k][iF][j]=0;
+		for (int i=0; i<dataElem->nbShapeFct; i++){
+		  val[k][iF][j]+=valShape[k][i]*dataElem->dof[iF][i][j];
+		}
       }
     }
   }
@@ -522,7 +513,7 @@ void vtkHighOrder::adapt_entity::writeEntity(double **valShape,double **valShape
   {
     for (int k=0; k<npoints; k++){
       for (int iF=0; iF<data->nbFields; iF++){
-	data->arrays[iF]->InsertNextTupleValue(val[k][iF]);
+    	  data->arrays[iF]->InsertNextTupleValue(val[k][iF]);
       }
       ids->InsertNextId(data->newPts->InsertNextPoint(points[k]));
     }
@@ -538,7 +529,7 @@ void vtkHighOrder::adapt_entity::getAvg(recurShape *tree, float *avg){
     avg[j]=0;
     for (int k=0; k<npoints; k++){
       for (int i=0; i<dataElem->nbShapeFct; i++){
-	avg[j]+=valShape[k][i]*dataElem->dof[data->iError][i][j];
+    	  avg[j]+=valShape[k][i]*dataElem->dof[data->iError][i][j];
       }
     }
     avg[j]=avg[j]/npoints;
