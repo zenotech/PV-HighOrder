@@ -66,10 +66,12 @@ void vtkHighOrder::subdivideAll(){
   if(nbPointArrays == 0)
   {
 	  vtkErrorMacro(<< "No PointData arrays found");
+	  return;
   }
   if(nbCellArrays == 0)
   {
 	  vtkErrorMacro(<< "No CellData arrays found");
+	  return;
   }
 
   // Create a set of all variables with HO solution pts
@@ -198,24 +200,28 @@ void vtkHighOrder::subdivideAll(){
 
       switch (cellType){
       case VTK_TRIANGLE:
-		getTriangleTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
-		if (!highOrderGeo)
-		  getTriangleTree(nbNodesByCell, levelMax);
+  		if (!highOrderGeo)
+  		  getTriangleTree(nbNodesByCell, levelMax);
+  		else
+  			getTriangleTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
 		break;
       case VTK_QUAD:
-        getQuadTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
         if (!highOrderGeo)
           getQuadTree(nbNodesByCell, levelMax);
+        else
+            getQuadTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
         break;
       case VTK_TETRA:
-        getTetrahedronTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
         if (!highOrderGeo)
           getTetrahedronTree(nbNodesByCell, levelMax);
+        else
+            getTetrahedronTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
         break;
       case VTK_HEXAHEDRON:
-		getHexahedronTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
 		if (!highOrderGeo)
 		  getHexahedronTree(nbNodesByCell, levelMax);
+		else
+			getHexahedronTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
 		break;
       default:
 	vtkErrorMacro(<< "Element type unknown ("<<nbNodesByCell<<") nodes"); 
