@@ -82,6 +82,9 @@
 	  Allow to use two recursive levels to compute the error
 	</Documentation>
       </IntVectorProperty>
+      <Hints>
+    <ShowInMenu icon=":/MyIcons/HighOrderIcon.png" />
+  		</Hints>
     </SourceProxy>
   </ProxyGroup>
 </ServerManagerConfiguration>
