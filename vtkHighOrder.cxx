@@ -84,8 +84,8 @@ void vtkHighOrder::subdivideAll(){
 	  {
 		  name = name.substr(0,pos);
 		  // Check if point data array exists
-		  //if(vtkFloatArray::SafeDownCast(in->GetPointData()->GetArray(name.c_str())))
-		  HOvariables.insert(name);
+		  if(vtkFloatArray::SafeDownCast(in->GetPointData()->GetArray(name.c_str())))
+			  HOvariables.insert(name);
 	  }
   }
 
