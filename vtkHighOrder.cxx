@@ -84,8 +84,8 @@ void vtkHighOrder::subdivideAll(){
 	  {
 		  name = name.substr(0,pos);
 		  // Check if point data array exists
-		  if(vtkFloatArray::SafeDownCast(in->GetPointData()->GetArray(name.c_str())))
-			  HOvariables.insert(name);
+		  //if(vtkFloatArray::SafeDownCast(in->GetPointData()->GetArray(name.c_str())))
+		  HOvariables.insert(name);
 	  }
   }
 
@@ -167,12 +167,14 @@ void vtkHighOrder::subdivideAll(){
   float val[dim[data.iError]];
 
   float sqAvg=0;
+  /*
   for (int i=0; i<in->GetNumberOfPoints(); i++){
     errArray->GetTupleValue(i,val);
     for (int j=0; j<dim[data.iError]; j++){
       sqAvg+=val[j]*val[j];
     }
   }
+  */
   float val2[dim[data.iError]];
   for (int k=0; k<nbAddDof; k++){
     for (int i=0; i<in->GetNumberOfCells(); i++){
@@ -184,7 +186,8 @@ void vtkHighOrder::subdivideAll(){
       }
     }
   }
-  sqAvg /= (in->GetNumberOfPoints()+in->GetNumberOfCells()*nbAddDof);
+  //sqAvg /= (in->GetNumberOfPoints()+in->GetNumberOfCells()*nbAddDof);
+  sqAvg /= (in->GetNumberOfCells()*nbAddDof);
   data.sqAvg=sqAvg;
 
   int iElem;
@@ -200,22 +203,22 @@ void vtkHighOrder::subdivideAll(){
 
       switch (cellType){
       case VTK_TRIANGLE:
-		getTriangleTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
+		getTriangleTree(nbAddDof, levelMax+((isTwoLevel==1)?1:0));
   		if (!highOrderGeo)
   		  getTriangleTree(nbNodesByCell, levelMax);
 		break;
       case VTK_QUAD:
-          getQuadTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
+          getQuadTree(nbAddDof, levelMax+((isTwoLevel==1)?1:0));
         if (!highOrderGeo)
           getQuadTree(nbNodesByCell, levelMax);
         break;
       case VTK_TETRA:
-          getTetrahedronTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
+          getTetrahedronTree(nbAddDof, levelMax+((isTwoLevel==1)?1:0));
         if (!highOrderGeo)
           getTetrahedronTree(nbNodesByCell, levelMax);
         break;
       case VTK_HEXAHEDRON:
-		getHexahedronTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
+		getHexahedronTree(nbAddDof, levelMax+((isTwoLevel==1)?1:0));
 		if (!highOrderGeo)
 		  getHexahedronTree(nbNodesByCell, levelMax);
 		break;
@@ -236,12 +239,12 @@ void vtkHighOrder::subdivideAll(){
       int cellType=in->GetCellType(iElem);
       
       float **dof[nbPointArrays];
-      int sizeDofCoord=highOrderGeo?(nbNodesByCell+nbAddDof):nbNodesByCell;
+      int sizeDofCoord=highOrderGeo?(nbAddDof):nbNodesByCell;
       float *dofCoord[sizeDofCoord];
       for (int i=0; i<sizeDofCoord; i++)
     	  dofCoord[i]=new float[3];
       for (int i=0; i<nbPointArrays; i++)
-    	  dof[i]=new float*[nbNodesByCell+nbAddDof];
+    	  dof[i]=new float*[nbAddDof];
       
       //P1 data
       for (int iNode=0; iNode<nbNodesByCell; iNode++){
@@ -249,26 +252,28 @@ void vtkHighOrder::subdivideAll(){
 		in->GetPoint(idsIn->GetId(iNode),v);
 		for (int i=0; i<3; i++)
 			dofCoord[iNode][i] = v[i];
-		for (int j=0; j<nbPointArrays; j++){
-		  vtkFloatArray *ptarray=vtkFloatArray::SafeDownCast(in->GetPointData()->GetArray(fieldsNames[j].c_str()));
-		  dof[j][iNode]=new float[dim[j]];
-		  ptarray->GetTupleValue(idsIn->GetId(iNode),dof[j][iNode]);
-		}
+
+		//for (int j=0; j<nbPointArrays; j++){
+		  //vtkFloatArray *ptarray=vtkFloatArray::SafeDownCast(in->GetPointData()->GetArray(fieldsNames[j].c_str()));
+		  //dof[j][iNode]=new float[dim[j]];
+		  //ptarray->GetTupleValue(idsIn->GetId(iNode),dof[j][iNode]);
+		//}
+
       }
       //High Order extension
       for (int i=0; i<nbAddDof; i++){
 		for (int j=0; j<nbPointArrays; j++){
-		  dof[j][i+nbNodesByCell]=new float[dim[j]];
-		  arraysDof[fieldsNames[j]][i]->GetTupleValue (iElem, dof[j][i+nbNodesByCell]);
+		  dof[j][i]=new float[dim[j]];
+		  arraysDof[fieldsNames[j]][i]->GetTupleValue (iElem, dof[j][i]);
 		}
 		if (highOrderGeo)
-		  arraysCoord[i]->GetTupleValue (iElem, dofCoord[i+nbNodesByCell]);
+		  arraysCoord[i]->GetTupleValue (iElem, dofCoord[i]);
       }
 
       adaptDataElem dataElem;
       dataElem.dof=dof;
       dataElem.dofCoord=dofCoord;
-      dataElem.nbShapeFct=nbNodesByCell+nbAddDof;
+      dataElem.nbShapeFct=nbAddDof;
       
       recurShape *tree,*treeLin;
       switch (cellType){
@@ -277,7 +282,7 @@ void vtkHighOrder::subdivideAll(){
 		  //#pragma omp critical(buildTreeTRI)
 		  {
 
-			tree=getTriangleTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
+			tree=getTriangleTree(nbAddDof, levelMax+((isTwoLevel==1)?1:0));
 			if (!highOrderGeo)
 			{
 			  treeLin=getTriangleTree(nbNodesByCell, levelMax);
@@ -295,7 +300,7 @@ void vtkHighOrder::subdivideAll(){
         {
           //#pragma omp critical(buildTreeQUAD)
           {
-        	tree=getQuadTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
+        	tree=getQuadTree(nbAddDof, levelMax+((isTwoLevel==1)?1:0));
             if (!highOrderGeo)
             {
               treeLin=getQuadTree(nbNodesByCell, levelMax);
@@ -314,7 +319,7 @@ void vtkHighOrder::subdivideAll(){
           //#pragma omp critical(buildTreeTET)
           {
 
-          	tree=getTetrahedronTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
+          	tree=getTetrahedronTree(nbAddDof, levelMax+((isTwoLevel==1)?1:0));
             if (!highOrderGeo)
             {
               treeLin=getTetrahedronTree(nbNodesByCell, levelMax);
@@ -333,7 +338,7 @@ void vtkHighOrder::subdivideAll(){
 		  //#pragma omp critical(buildTreeHEX)
 		  {
 
-			tree=getHexahedronTree(nbNodesByCell+nbAddDof, levelMax+((isTwoLevel==1)?1:0));
+			tree=getHexahedronTree(nbAddDof, levelMax+((isTwoLevel==1)?1:0));
 			if (!highOrderGeo)
 			{
 			  treeLin=getHexahedronTree(nbNodesByCell, levelMax);
@@ -356,7 +361,7 @@ void vtkHighOrder::subdivideAll(){
       for (int i=0; i<sizeDofCoord; i++)
     	  delete[] dofCoord[i];
       for (int j=0; j<nbPointArrays; j++){
-		for (int i=0; i<nbNodesByCell+nbAddDof; i++){
+		for (int i=0; i<nbAddDof; i++){
 		  delete[] dof[j][i];
 		}
 		delete[] dof[j];
