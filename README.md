@@ -13,3 +13,5 @@ The CellData arrays *\_HOsol\_i (where i is the solution point index) should be 
 
 On startup if a PointData array that matches the *\_HOsol\_i is not found the high order solution is ignored.
 
+On Mac use dylibbundler to install plugin
+dylibbundler -x ./libHighOrder.dylib -p @executable_path/../Libraries
