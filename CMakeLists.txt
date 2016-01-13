@@ -6,7 +6,7 @@ FIND_PACKAGE(ParaView REQUIRED)
 INCLUDE(${PARAVIEW_USE_FILE})
 
 add_custom_command(OUTPUT shapeFunctions.h
-    COMMAND bunzip2 -k shapeFunctions.h.bz2
+    COMMAND bunzip2 -fk shapeFunctions.h.bz2
     DEPENDS shapeFunctions.h.bz2
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     COMMENT "Unziping shapeFunctions.h"
