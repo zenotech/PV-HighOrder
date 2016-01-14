@@ -12,6 +12,14 @@ add_custom_command(OUTPUT shapeFunctions.h
     COMMENT "Unziping shapeFunctions.h"
     VERBATIM
     )
+    
+ADD_CUSTOM_TARGET(shapeFunctions
+    COMMAND bunzip2 -fk shapeFunctions.h.bz2
+    DEPENDS shapeFunctions.h.bz2
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Unziping shapeFunctions.h"
+    VERBATIM
+    )
 
 #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 
@@ -23,5 +31,7 @@ ADD_PARAVIEW_PLUGIN(
     GUI_RESOURCES HighOrder.qrc
     GUI_RESOURCE_FILES HighOrderGUI.xml
 )
+
+ADD_DEPENDENCIES(HighOrder shapeFunctions)
 
 INSTALL(TARGETS HighOrder DESTINATION lib)
